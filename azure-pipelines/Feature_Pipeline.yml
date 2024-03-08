@@ -1,0 +1,72 @@
+trigger:
+  branches:
+    include:
+      - none
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: repo_parent_folder
+    type: string
+    default: MLOpsFlow
+
+variables:
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/UAT')}}:
+    - group: SDK-UAT
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/PROD')}}:
+    - group: SDK-PROD
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/QA')}}:
+    - group: SDK-QA
+  - ${{ if not(or(eq(variables['Build.SourceBranch'], 'refs/heads/QA'), eq(variables['Build.SourceBranch'], 'refs/heads/UAT'), eq(variables['Build.SourceBranch'], 'refs/heads/PROD'))) }}:
+    - group: SDK-DEV
+
+
+stages:
+  - stage: PublishToDBFS
+    displayName: publish notebooks
+    jobs:
+      - job: Publish
+        steps:
+          - bash: pip install requests && pip install python-dotenv && pip install databricks-cli
+            displayName: installing requests, python-dotenv and databricks-cli
+
+          - script: |
+              SUBSTRING=$(echo $(Build.Repository.Name)| cut -d'/' -f 2)
+              echo $SUBSTRING
+              echo "##vso[task.setvariable variable=projectName]$SUBSTRING"
+            displayName: 'project name'
+
+          - script: |
+              sed -i 's|${ENV_VARIABLE}|$(DEPLOY_ENV)|g' "$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_FT_config.yaml"
+              sed -i 's|${CLUSTER_ID}|$(CLUSTER_ID)|g' "$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_FT_config.yaml"
+              sed -i 's|${NOTEBOOK_PATH}|/Repos/${{ parameters.repo_parent_folder }}/$(projectName)/notebooks/FeaturePipeline_FT|g' "$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_FT_config.yaml"
+              python -c "import json, yaml; print(json.dumps(yaml.load(open('$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_FT_config.yaml'), Loader=yaml.FullLoader)))" > Feature_Pipeline_FT_config.json
+            displayName: 'Update configs with Variables'
+
+          - script: |
+              databricks repos update --path /Repos/${{ parameters.repo_parent_folder }}/$(projectName) --branch $(BRANCH)
+              job_id=$(databricks jobs create --json-file Feature_Pipeline_FT_config.json | jq -r '.job_id')
+              databricks jobs run-now --job-id "$job_id"
+              echo "job_id : $job_id"
+            displayName: 'Create Databricks Job'
+            env:
+              databricksAccessToken: $(DATABRICKS_TOKEN)
+
+          - script: |
+              sed -i 's|${ENV_VARIABLE}|$(DEPLOY_ENV)|g' "$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_GT_config.yaml"
+              sed -i 's|${CLUSTER_ID}|$(CLUSTER_ID)|g' "$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_GT_config.yaml"
+              sed -i 's|${NOTEBOOK_PATH}|/Repos/${{ parameters.repo_parent_folder }}/$(projectName)/notebooks/FeaturePipeline_GT|g' "$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_GT_config.yaml"
+              python -c "import json, yaml; print(json.dumps(yaml.load(open('$(Build.SourcesDirectory)/azure-pipelines/pipeline_configs/Feature_Pipeline_GT_config.yaml'), Loader=yaml.FullLoader)))" > Feature_Pipeline_GT_config.json
+            displayName: 'Update configs with Variables'
+
+          - script: |
+              job_id=$(databricks jobs create --json-file Feature_Pipeline_GT_config.json | jq -r '.job_id')
+              databricks jobs run-now --job-id "$job_id"
+              echo "job_id : $job_id"
+            displayName: 'Create Databricks Job'
+            env:
+              databricksAccessToken: $(DATABRICKS_TOKEN)
+              
