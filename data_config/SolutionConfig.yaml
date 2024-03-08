@@ -54,7 +54,6 @@ inference:
   transformed_features_path: DPD_Telecom_churn_x_0803
 train:
   feature_columns:
-  - State
   - Account 
   - length 
   - Area_code 
