@@ -95,6 +95,27 @@ ground_truth_df.display()
 
 # COMMAND ----------
 
+import pandas as pd
+
+# COMMAND ----------
+
+ground_truth_df = ground_truth_df.toPandas()
+
+# COMMAND ----------
+
+ground_truth_df.info()
+
+# COMMAND ----------
+
+categ = ['Churn']
+
+from sklearn.preprocessing import LabelEncoder
+# Encode Categorical Columns
+le = LabelEncoder()
+ground_truth_df[categ] = ground_truth_df[categ].apply(le.fit_transform)
+
+# COMMAND ----------
+
 from pyspark.sql import functions as F
 import pickle
 
