@@ -155,31 +155,10 @@ data = FT_DF.toPandas()
 
 import pandas as pd
 import numpy as np
-data.Dt_Customer = data.Dt_Customer.apply(lambda x : pd.to_datetime(str(x)))
-data.Dt_Customer.describe()
 
 # COMMAND ----------
 
-data["Age"] = 2021 - pd.to_datetime(data["Year_Birth"], format="%Y").apply(lambda x: x.year)
-data[data["Age"] > 100]
-
-# COMMAND ----------
-
-data.drop(data[data["Age"] > 100].index, inplace=True)
-
-# COMMAND ----------
-
-# Extracting registration year from the date
-data["Reg_year"] = data["Dt_Customer"].apply(lambda x: x.year)
-
-# Extracting registration quarter from the date
-data["Reg_quarter"] = data["Dt_Customer"].apply(lambda x: x.quarter)
-
-# Extracting registration month from the date
-data["Reg_month"] = data["Dt_Customer"].apply(lambda x: x.month)
-
-# Extracting registration week from the date
-data["Reg_week"] = data["Dt_Customer"].apply(lambda x: x.day // 7)
+data
 
 # COMMAND ----------
 
@@ -187,184 +166,16 @@ data.head()
 
 # COMMAND ----------
 
-data["Education"] = data["Education"].replace("2n Cycle", "Master")
-
-# COMMAND ----------
-
-data["Marital_Status"] = data["Marital_Status"].replace(["YOLO", "Alone", "Absurd"], "Single")
-data["Marital_Status"] = data["Marital_Status"].replace(["Together"], "Married")
-
-# COMMAND ----------
-
-data["Total_Amount_Spent"] = data[
-    [
-        "MntWines",
-        "MntFruits",
-        "MntMeatProducts",
-        "MntFishProducts",
-        "MntSweetProducts",
-        "MntGoldProds",
-    ]
-].sum(axis=1)
-
-# COMMAND ----------
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-def histogram_boxplot(data, feature, figsize=(12, 7), kde=False, bins=None):
-    """
-    Boxplot and histogram combined
-
-    data: dataframe
-    feature: dataframe column
-    figsize: size of figure (default (12,7))
-    kde: whether to the show density curve (default False)
-    bins: number of bins for histogram (default None)
-    """
-    f2, (ax_box2, ax_hist2) = plt.subplots(
-        nrows=2,  # Number of rows of the subplot grid= 2
-        sharex=True,  # x-axis will be shared among all subplots
-        gridspec_kw={"height_ratios": (0.25, 0.75)},
-        figsize=figsize,
-    )  # creating the 2 subplots
-    sns.boxplot(
-        data=data, x=feature, ax=ax_box2, showmeans=True, color="violet"
-    )  # boxplot will be created and a triangle will indicate the mean value of the column
-    sns.histplot(
-        data=data, x=feature, kde=kde, ax=ax_hist2, bins=bins
-    ) if bins else sns.histplot(
-        data=data, x=feature, kde=kde, ax=ax_hist2
-    )  # For histogram
-    ax_hist2.axvline(
-        data[feature].mean(), color="green", linestyle="--"
-    )  # Add mean to the histogram
-    ax_hist2.axvline(
-        data[feature].median(), color="black", linestyle="-"
-    )  # Add median to the histogram
-
-# COMMAND ----------
-
-histogram_boxplot(data, "Income")
-
-# COMMAND ----------
-
-data[data["Income"] > 200000]
-
-# COMMAND ----------
-
-data.drop(index=data[data.Income > 200000].index, inplace=True)
-
-# COMMAND ----------
-
-histogram_boxplot(data, "MntMeatProducts")
-
-# COMMAND ----------
-
-data.MntMeatProducts.nlargest(10)
-
-# COMMAND ----------
-
-data[data["MntMeatProducts"] > 1580]
-
-# COMMAND ----------
-
-data["MntMeatProducts"].clip(upper=984, inplace=True)
-
-# COMMAND ----------
-
-histogram_boxplot(data, "MntSweetProducts")
-
-# COMMAND ----------
-
-data[data["MntSweetProducts"] > 200]
-
-# COMMAND ----------
-
-data["MntSweetProducts"].clip(upper=198, inplace=True)
-
-# COMMAND ----------
-
-histogram_boxplot(data, "MntGoldProds")
-
-# COMMAND ----------
-
-data[data["MntGoldProds"] > 250]
-
-# COMMAND ----------
-
-data["MntGoldProds"].clip(upper=250, inplace=True)
-
-# COMMAND ----------
-
-histogram_boxplot(data, "MntWines")
-
-# COMMAND ----------
-
-histogram_boxplot(data, "NumWebPurchases")
-
-# COMMAND ----------
-
-data[data["NumWebPurchases"] > 15]
-
-# COMMAND ----------
-
-data["NumWebPurchases"].clip(upper=11, inplace=True)
-
-# COMMAND ----------
-
-histogram_boxplot(data, "NumWebVisitsMonth")
-
-# COMMAND ----------
-
-histogram_boxplot(data, "NumCatalogPurchases")
-
-# COMMAND ----------
-
-data[data["NumCatalogPurchases"] > 15]
-
-# COMMAND ----------
-
-data["NumCatalogPurchases"].clip(upper=11, inplace=True)
-
-# COMMAND ----------
-
-pd.pivot_table(
-    data=data,
-    index=["Reg_year", "Reg_month"],
-    values="Total_Amount_Spent",
-    aggfunc=np.sum,
-).plot(kind="line", marker="o", linewidth=2, figsize=(12, 5))
-
-# COMMAND ----------
-
-plt.figure(figsize=(12, 5))
-sns.regplot(y=data.Total_Amount_Spent, x=data.Income)
-
-# COMMAND ----------
-
-data.head(2)
-
-# COMMAND ----------
-
-data.drop(
-    columns=[
-        "Year_Birth",
-        "Dt_Customer",
-        "Reg_quarter",
-        "Total_Amount_Spent",
-    ],
-    inplace=True,
-)
-
-# COMMAND ----------
-
-categ = ['Education','Marital_Status']
+categ = ['International_plan','Voice_mail_plan']
 
 from sklearn.preprocessing import LabelEncoder
 # Encode Categorical Columns
 le = LabelEncoder()
 data[categ] = data[categ].apply(le.fit_transform)
+
+# COMMAND ----------
+
+data.display()
 
 # COMMAND ----------
 
