@@ -1,0 +1,52 @@
+trigger:
+  branches:
+    include:
+      - DEV
+      - UAT
+      - PROD
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: repo_parent_folder
+    type: string
+    default: MLOpsFlow
+
+variables:
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/UAT')}}:
+    - group: SDK-UAT
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/PROD')}}:
+    - group: SDK-PROD
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/QA')}}:
+    - group: SDK-QA
+  - ${{ if not(or(eq(variables['Build.SourceBranch'], 'refs/heads/QA'), eq(variables['Build.SourceBranch'], 'refs/heads/UAT'), eq(variables['Build.SourceBranch'], 'refs/heads/PROD'))) }}:
+    - group: SDK-DEV
+  
+
+stages:
+  - stage: PublishToDBFS
+    displayName: publish notebooks
+    jobs:
+      - job: Publish
+        steps:
+          - bash: pip install requests && pip install python-dotenv && pip install databricks-cli
+            displayName: installing requests, python-dotenv and databricks-cli
+
+          - script: |
+              SUBSTRING=$(echo $(Build.Repository.Name)| cut -d'/' -f 2)
+              echo $SUBSTRING
+              echo "##vso[task.setvariable variable=projectName]$SUBSTRING"
+            displayName: 'project name'
+
+          - script: |
+              databricks workspace mkdirs "/Repos/${{ parameters.repo_parent_folder }}"
+              databricks repos create --url $(Build.Repository.Uri) --path "/Repos/${{ parameters.repo_parent_folder }}/$(projectName)"
+              databricks repos update --path "/Repos/${{ parameters.repo_parent_folder }}/$(projectName)" --branch $(BRANCH)
+            displayName: 'Clone Repo to Databricks'
+            env:
+              databricksAccessToken: $(DATABRICKS_TOKEN)
+
+

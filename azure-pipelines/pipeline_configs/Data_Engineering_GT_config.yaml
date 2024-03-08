@@ -1,0 +1,9 @@
+name: Data_Engineering_GT
+existing_cluster_id: "${CLUSTER_ID}"
+notebook_task:
+  notebook_path: "${NOTEBOOK_PATH}"
+  base_parameters:
+    env: "${ENV_VARIABLE}"
+schedule:
+  quartz_cron_expression: "0 0/30 * 1/1 * ? *"
+  timezone_id: "Asia/Calcutta"

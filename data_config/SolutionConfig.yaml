@@ -1,0 +1,89 @@
+database_name: Telecom_churn_0803
+ds_environment: dev
+sdk_session_id_dev: c0337df98f094afcabfff2fe7c403789
+sdk_session_id_uat: 656f1d02266598e250794b57 
+sdk_session_id_prod: 64ec92d6117247877965d152 #update
+data_engineering:
+  data_engineering_ft:
+    features_dbfs_path: dbfs:/mnt/mlcore/dev/source/Telecom_churn_Y_rTRN_8efe65809e5b4f77ab1c011be4e48d91
+    features_table_name: Telecom_churn_x_0803
+    primary_keys:
+    - Index
+  data_engineering_gt:
+    ground_truth_dbfs_path: dbfs:/mnt/mlcore/dev/source/Telecom_churn_X_9aa1ca5ee234459bb209a9b3321c1c9b
+    ground_truth_table_name:  Telecom_churn_y_0803
+    primary_keys:
+    - Index
+data_prep_deployments:
+  data_prep_deployment_ft:
+    batch_size: 5000
+    cron_job_schedule: 0 */30 * ? * *
+    features_dbfs_path: Telecom_churn_x_0803
+    is_scheduled: true
+    primary_keys:
+    - Index
+    transformed_features_table_name: DPD_Telecom_churn_x_0803
+  data_prep_deployment_gt:
+    batch_size: 5000
+    cron_job_schedule: 0 */30 * ? * *
+    ground_truth_dbfs_path: Telecom_churn_y_0803
+    is_scheduled: true
+    primary_keys:
+    - Index
+    transformed_ground_truth_table_name: DPD_Telecom_churn_y_0803
+feature_pipelines:
+  feature_pipelines_ft:
+    features_dbfs_path: Telecom_churn_x_0803
+    is_scheduled: false
+    primary_keys:
+    - Index
+    transformed_features_table_name: Transformed_Telecom_churn_x_0803
+  feature_pipelines_gt:
+    ground_truth_dbfs_path: Telecom_churn_y_0803
+    is_scheduled: false
+    primary_keys:
+    - Index
+    transformed_ground_truth_table_name: Transformed_Telecom_churn_y_0803
+inference:
+  batch_size: 500
+  cron_job_schedule: 0 */30 * ? * *
+  ground_truth_path: DPD_Telecom_churn_y_0803
+  model_name: Telecom_churn_0803
+  model_version: '1'
+  output_table_name: inference_output_table_Telecom_churn_0803
+  transformed_features_path: DPD_Telecom_churn_x_0803
+train:
+  feature_columns:
+  - State
+  - Account 
+  - length 
+  - Area_code 
+  - International_plan
+  - Voice_mail_plan 
+  - Number_vmail_messages 
+  - Total_day_minutes
+  - Total_day_calls 
+  - Total_day_charge 
+  - Total_eve_minutes
+  - Total_eve_calls 
+  - Total_eve_charge 
+  - Total_night_minutes
+  - Total_night_calls 
+  - Total_night_charge 
+  - Total_intl_minutes
+  - Total_intl_calls 
+  - Total_intl_charge 
+  - Customer_service_calls 
+  sensitive_variables:
+  - International_plan
+  - Voice_mail_plan 
+  feature_table_path: Transformed_Telecom_churn_x_0803
+  ground_truth_path: Transformed_Telecom_churn_y_0803
+  model_name: super_store_0603_v2
+  model_version: '1'
+  primary_keys:
+  - Index
+  target_columns:
+  - Churn
+  test_size: 0.2
+  train_output_table_name: train_output_Telecom_churn_x_0803
